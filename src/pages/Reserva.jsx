@@ -390,7 +390,10 @@ export default function ReservaPage() {
                 {alert.type === "info" && "Informação"}
               </AlertTitle>
 
-              {alert.message}
+              <Typography sx={{ whiteSpace: "pre-line" }}>
+                {alert.message}
+              </Typography>
+
             </Alert>
           )}
         </Snackbar>
