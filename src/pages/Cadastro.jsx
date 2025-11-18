@@ -7,6 +7,7 @@ import {
   MenuItem,
   Snackbar,
   Alert,
+  AlertTitle,
 } from "@mui/material";
 import DefaultLayout from "../components/DefaultLayout";
 import VisibilityIcon from "@mui/icons-material/Visibility";
@@ -212,16 +213,18 @@ function Cadastro() {
 
         <Snackbar
           open={alert.visible}
-          autoHideDuration={4000}
           onClose={handleClose}
           anchorOrigin={{ vertical: "top", horizontal: "center" }}
         >
-          {alert.visible && alert.message && alert.type && (
-            <Alert
-              severity={alert.type}
-              onClose={handleClose}
-              sx={{ width: "100%" }}
-            >
+          {alert.type && (
+            <Alert severity={alert.type} onClose={handleClose} sx={{ width: "100%" }}>
+              <AlertTitle>
+                {alert.type === "success" && "Sucesso"}
+                {alert.type === "error" && "Erro"}
+                {alert.type === "warning" && "Atenção"}
+                {alert.type === "info" && "Informação"}
+              </AlertTitle>
+
               {alert.message}
             </Alert>
           )}

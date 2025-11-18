@@ -288,7 +288,6 @@ export default function MinhasReservas() {
 
       <Snackbar
         open={alert.visible}
-        autoHideDuration={4000}
         onClose={handleClose}
         anchorOrigin={{ vertical: "top", horizontal: "center" }}
       >

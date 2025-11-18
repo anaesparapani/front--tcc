@@ -378,7 +378,6 @@ export default function ReservaPage() {
 
         <Snackbar
           open={alert.visible}
-          autoHideDuration={4000}
           onClose={handleClose}
           anchorOrigin={{ vertical: "top", horizontal: "center" }}
         >

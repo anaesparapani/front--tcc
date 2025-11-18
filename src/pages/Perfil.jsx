@@ -5,6 +5,7 @@ import {
   TextField,
   Button,
   Alert,
+  AlertTitle,
   Snackbar,
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
@@ -270,16 +271,18 @@ function Perfil() {
 
         <Snackbar
           open={alert.visible}
-          autoHideDuration={4000}
           onClose={handleClose}
           anchorOrigin={{ vertical: "top", horizontal: "center" }}
         >
           {alert.type && (
-            <Alert
-              severity={alert.type}
-              onClose={handleClose}
-              sx={{ width: "100%" }}
-            >
+            <Alert severity={alert.type} onClose={handleClose} sx={{ width: "100%" }}>
+              <AlertTitle>
+                {alert.type === "success" && "Sucesso"}
+                {alert.type === "error" && "Erro"}
+                {alert.type === "warning" && "Atenção"}
+                {alert.type === "info" && "Informação"}
+              </AlertTitle>
+
               {alert.message}
             </Alert>
           )}
