@@ -55,9 +55,8 @@ export default function MinhasReservas() {
               })),
               // Se vier do backend, mantém. Caso contrário, pega do primeiro período.
               id_reserva: r.id_reserva || r.periodos?.[0]?.id_reserva,
-              uniqueKey: `${data}-${r.nomeSalaDisplay || r.nomeSala || idx}-${
-                r.descricaoDetalhe || r.descricaoSala || idx
-              }`,
+              uniqueKey: `${data}-${r.nomeSalaDisplay || r.nomeSala || idx}-${r.descricaoDetalhe || r.descricaoSala || idx
+                }`,
             }))
         );
 
@@ -293,11 +292,14 @@ export default function MinhasReservas() {
         anchorOrigin={{ vertical: "top", horizontal: "center" }}
       >
         {alert.type && (
-          <Alert
-            severity={alert.type}
-            onClose={handleClose}
-            sx={{ width: "100%" }}
-          >
+          <Alert severity={alert.type} onClose={handleClose} sx={{ width: "100%" }}>
+            <AlertTitle>
+              {alert.type === "success" && "Sucesso"}
+              {alert.type === "error" && "Erro"}
+              {alert.type === "warning" && "Atenção"}
+              {alert.type === "info" && "Informação"}
+            </AlertTitle>
+
             {alert.message}
           </Alert>
         )}
