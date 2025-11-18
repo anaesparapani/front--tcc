@@ -390,7 +390,7 @@ export default function ReservaPage() {
                 {alert.type === "info" && "Informação"}
               </AlertTitle>
 
-              <Typography sx={{ whiteSpace: "pre-line" }}>
+              <Typography sx={{ whiteSpace: "pre-line" }}> {/*para pular linha*/}
                 {alert.message}
               </Typography>
 
