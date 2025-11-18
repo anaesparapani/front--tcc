@@ -12,16 +12,23 @@ import {
 } from "@mui/material";
 import api from "../axios/axios";
 import ModalExcluirReserva from "../components/ModalExcluirReserva";
+import ModalExcluirReservaMultipla from "../components/ModalExcluirReservaMultipla";
 
 export default function MinhasReservas() {
   const [reservas, setReservas] = useState([]);
   const [loading, setLoading] = useState(true);
   const [alert, setAlert] = useState({ type: "", message: "", visible: false });
   const [modalOpen, setModalOpen] = useState(false);
+  const [modalMultiplosOpen, setModalMultiplosOpen] = useState(false);
   const [reservaSelecionada, setReservaSelecionada] = useState(null);
+  const [periodosDoDia, setPeriodosDoDia] = useState([]);
   const idUsuario = localStorage.getItem("id_usuario");
 
-  const handleClose = () => setAlert({ ...alert, visible: false });
+  // evita fechar com clickaway; só fecha quando o usuário clicar no X
+  const handleClose = (event, reason) => {
+    if (reason === "clickaway") return;
+    setAlert((prev) => ({ ...prev, visible: false }));
+  };
 
   // Carrega reservas do usuário
   const carregarReservas = useCallback(() => {
@@ -50,12 +57,18 @@ export default function MinhasReservas() {
               nomeSala: r.nomeSala || r.nomeSalaDisplay || "Sala não informada",
               descricaoSala:
                 r.descricaoSala || r.descricaoDetalhe || "Sem descrição",
-              periodos: r.periodos.map((p) => ({
+              // mantém os campos de periodo e garante que cada periodo tenha id_reserva e horario
+              periodos: (r.periodos || []).map((p) => ({
                 ...p,
-                id_periodo: p.id_periodo,
+                // some APIs usam id_reserva no periodo, outras usam id_periodo.
+                // aqui garantimos que exista id_reserva (fallback para id_periodo)
+                id_reserva: p.id_reserva || p.id_periodo,
+                horario:
+                  (p.horario_inicio?.slice(0, 5) || "") +
+                  (p.horario_fim ? " - " + p.horario_fim.slice(0, 5) : ""),
               })),
-              // Se vier do backend, mantém. Caso contrário, pega do primeiro período.
-              id_reserva: r.id_reserva || r.periodos?.[0]?.id_reserva,
+              // Se vier do backend, caso contrário pega do primeiro período
+              id_reserva: r.id_reserva || r.periodos?.[0]?.id_reserva || r.periodos?.[0]?.id_periodo,
               uniqueKey: `${data}-${r.nomeSalaDisplay || r.nomeSala || idx}-${r.descricaoDetalhe || r.descricaoSala || idx
                 }`,
             }))
@@ -77,17 +90,13 @@ export default function MinhasReservas() {
     carregarReservas();
   }, [carregarReservas]);
 
+  // Excluir um único período (comportamento antigo, mantido)
   const handleExcluir = async () => {
     if (!reservaSelecionada) return;
 
     try {
-      const idReserva =
-        reservaSelecionada?.id_reserva ||
-        reservaSelecionada?.periodoSelecionado?.id_reserva;
-
-      if (!idReserva) {
-        throw new Error("ID da reserva não encontrado.");
-      }
+      const idReserva = reservaSelecionada?.periodoSelecionado?.id_reserva;
+      if (!idReserva) throw new Error("ID da reserva não encontrado no período selecionado.");
 
       await api.deleteSchedule(idReserva);
 
@@ -107,6 +116,39 @@ export default function MinhasReservas() {
           err.response?.data?.error ||
           err.message ||
           "Erro ao excluir a reserva.",
+        visible: true,
+      });
+    }
+  };
+
+  // Excluir vários períodos: ids é um array de id_reserva (números/strings)
+  const handleExcluirMultiplos = async (ids) => {
+    if (!Array.isArray(ids) || ids.length === 0) {
+      setAlert({ type: "warning", message: "Nenhum período selecionado.", visible: true });
+      return;
+    }
+
+    try {
+      // chama seu endpoint que deve executar a procedure no banco
+      // certifique-se que seu backend aceita POST /deletarPeriodos com body { ids: [...] }
+      await api.post("/deletarPeriodos", { ids });
+
+      setAlert({
+        type: "success",
+        message: "Períodos deletados com sucesso!",
+        visible: true,
+      });
+
+      setModalMultiplosOpen(false);
+      carregarReservas();
+    } catch (err) {
+      console.error("Erro ao deletar períodos:", err);
+      setAlert({
+        type: "error",
+        message:
+          err.response?.data?.error ||
+          err.message ||
+          "Erro ao deletar períodos. Tente novamente.",
         visible: true,
       });
     }
@@ -195,10 +237,29 @@ export default function MinhasReservas() {
                   </Typography>
                 </Box>
 
+                {/* link para abrir modal de múltiplos períodos do dia */}
+                <Typography
+                  sx={{ cursor: "pointer", color: "blue", textDecoration: "underline", mb: 1 }}
+                  onClick={() => {
+                    // monta array de periodos do dia no formato { id_reserva, horario }
+                    const todos = reservasPorData[data].flatMap((r) =>
+                      (r.periodos || []).map((p) => ({
+                        id_reserva: p.id_reserva || p.id_periodo,
+                        horario: p.horario || (p.horario_inicio?.slice(0, 5) + (p.horario_fim ? " - " + p.horario_fim.slice(0, 5) : "")),
+                        // opcional: adicionar referência à sala se quiser exibir
+                        nomeSala: r.nomeSala,
+                      }))
+                    );
+                    setPeriodosDoDia(todos);
+                    setModalMultiplosOpen(true);
+                  }}
+                >
+                  Excluir múltiplos períodos
+                </Typography>
+
                 <Grid container spacing={2}>
                   {reservasPorData[data].map((reserva) => {
-                    const { nomeSala, descricaoSala, periodos, uniqueKey } =
-                      reserva;
+                    const { nomeSala, descricaoSala, periodos, uniqueKey } = reserva;
 
                     return (
                       <Grid item key={uniqueKey}>
@@ -242,7 +303,7 @@ export default function MinhasReservas() {
                               const texto =
                                 inicio && fim
                                   ? `${inicio} - ${fim}`
-                                  : "Horário: não informado";
+                                  : p.horario || "Horário: não informado";
 
                               return (
                                 <Typography
@@ -279,11 +340,20 @@ export default function MinhasReservas() {
         </Box>
       )}
 
+      {/* modal antigo (excluir 1 período) - mantido */}
       <ModalExcluirReserva
         open={modalOpen}
         handleClose={() => setModalOpen(false)}
         reserva={reservaSelecionada}
         onConfirm={handleExcluir}
+      />
+
+      {/* novo modal (seleção múltipla) */}
+      <ModalExcluirReservaMultipla
+        open={modalMultiplosOpen}
+        handleClose={() => setModalMultiplosOpen(false)}
+        periodos={periodosDoDia}
+        onConfirm={handleExcluirMultiplos}
       />
 
       <Snackbar
@@ -300,7 +370,8 @@ export default function MinhasReservas() {
               {alert.type === "info" && "Informação"}
             </AlertTitle>
 
-            {alert.message}
+            {/* respeita quebras de linha caso envie mensagens longas */}
+            <Typography sx={{ whiteSpace: "pre-line" }}>{alert.message}</Typography>
           </Alert>
         )}
       </Snackbar>
