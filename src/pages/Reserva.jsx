@@ -7,6 +7,7 @@ import {
   TextField,
   Grid,
   Alert,
+  AlertTitle,
   MenuItem,
   FormControl,
   InputLabel,
@@ -120,16 +121,15 @@ export default function ReservaPage() {
         data_fim: dataFim,
       });
 
-      // Se vierem mensagens de erro SQL, junta tudo formatado
       const msgErros =
         Array.isArray(response.data?.msgErros) &&
-        response.data.msgErros.length > 0
+          response.data.msgErros.length > 0
           ? response.data.msgErros
-              .map(
-                (e, i) =>
-                  `${i + 1}. ${e.erro || e.sqlMessage || JSON.stringify(e)}`
-              )
-              .join("\n")
+            .map(
+              (e, i) =>
+                `${i + 1}. ${e.erro || e.sqlMessage || JSON.stringify(e)}`
+            )
+            .join("\n")
           : "";
 
       const mensagemFinal = [
@@ -192,7 +192,7 @@ export default function ReservaPage() {
   return (
     <Box sx={{ backgroundColor: "#ffe9e9", minHeight: "100vh", width: "100%" }}>
       <Box sx={{ width: "100%", p: 3, boxSizing: "border-box" }}>
-        {/*número da sala */}
+        {/* número da sala */}
         <Box
           sx={{
             backgroundColor: "#f4bcbc",
@@ -341,8 +341,8 @@ export default function ReservaPage() {
                       backgroundColor: h.reservado
                         ? "#E56565"
                         : selecionado
-                        ? "#ffffff"
-                        : "#a5d6a7",
+                          ? "#ffffff"
+                          : "#a5d6a7",
                       color: "black",
                       border: selecionado
                         ? "2px solid #b22222"
@@ -354,7 +354,6 @@ export default function ReservaPage() {
                       textTransform: "none",
                     }}
                   >
-                    {/* horário */}
                     <Typography variant="body2" sx={{ fontWeight: 600 }}>
                       {`${h.horario_inicio.slice(0, 5)} - ${h.horario_fim.slice(
                         0,
@@ -362,7 +361,6 @@ export default function ReservaPage() {
                       )}`}
                     </Typography>
 
-                    {/* nome do usuário */}
                     {h.reservado && (
                       <Typography
                         variant="caption"
@@ -385,11 +383,14 @@ export default function ReservaPage() {
           anchorOrigin={{ vertical: "top", horizontal: "center" }}
         >
           {alert.type && (
-            <Alert
-              severity={alert.type}
-              onClose={handleClose}
-              sx={{ width: "100%" }}
-            >
+            <Alert severity={alert.type} onClose={handleClose} sx={{ width: "100%" }}>
+              <AlertTitle>
+                {alert.type === "success" && "Sucesso"}
+                {alert.type === "error" && "Erro"}
+                {alert.type === "warning" && "Atenção"}
+                {alert.type === "info" && "Informação"}
+              </AlertTitle>
+
               {alert.message}
             </Alert>
           )}
