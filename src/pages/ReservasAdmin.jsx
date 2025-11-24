@@ -24,15 +24,24 @@ export default function ReservasAdmin() {
   const [reservaId, setReservaId] = useState(null);
   const [openDialog, setOpenDialog] = useState(false);
   const [filtroLetra, setFiltroLetra] = useState(null);
+  const [horariosDaSala, setHorariosDaSala] = useState([]);
 
-  const handleOpenDialog = (id) => {
-    console.log("Abrindo diálogo para reserva:", id);
+  const handleOpenDialog = (id, horariosSala) => {
     setReservaId(id);
+    setHorariosDaSala(
+      horariosSala.map((h) => ({
+        id: h.id_reserva,
+        inicio: h.horario_inicio.slice(0, 5),
+        fim: h.horario_fim.slice(0, 5),
+      }))
+    );
     setOpenDialog(true);
   };
+
   const handleCloseDialog = () => {
     setOpenDialog(false);
     setReservaId(null);
+    setHorariosDaSala([]);
   };
 
   const handleClose = () => {
@@ -42,7 +51,6 @@ export default function ReservasAdmin() {
   async function getReservas(dataFormatada) {
     try {
       const response = await api.getReservasByData(dataFormatada);
-      console.log("Reservas recebidas:", response.data.reservaBySala);
       setReservas(response.data.reservaBySala);
     } catch (error) {
       setReservas({});
@@ -51,14 +59,12 @@ export default function ReservasAdmin() {
         type: "error",
         visible: true,
       });
-      console.log(error);
     }
   }
 
   const handleDeleteReserva = async () => {
     try {
       const response = await api.deleteSchedule(reservaId);
-      console.log("Reserva deletada com sucesso!");
       setOpenDialog(false);
 
       setAlert({
@@ -66,6 +72,7 @@ export default function ReservasAdmin() {
         type: "success",
         visible: true,
       });
+
       if (dataSelecionada) {
         const dataFormatada = dayjs(dataSelecionada).format("YYYY-MM-DD");
         getReservas(dataFormatada);
@@ -89,7 +96,6 @@ export default function ReservasAdmin() {
   }, [dataSelecionada]);
 
   const handleClick = (letra) => {
-    console.log(`Botão clicado: ${letra}`);
     setFiltroLetra((prev) => (prev === letra ? null : letra));
   };
 
@@ -124,6 +130,7 @@ export default function ReservasAdmin() {
         >
           Selecione uma data:
         </Typography>
+
         <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="pt-br">
           <DateCalendar
             value={dataSelecionada}
@@ -138,17 +145,17 @@ export default function ReservasAdmin() {
 
         <Blocos handleClick={handleClick} />
 
+        {/* LISTA DAS SALAS */}
         <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2 }}>
           {Object.entries(reservas)
             .filter(([nomeSala]) => {
               if (!filtroLetra) return true;
               return nomeSala.startsWith(filtroLetra);
             })
-            .sort(([nomeSalaA], [nomeSalaB]) =>
-              nomeSalaA.localeCompare(nomeSalaB)
-            )
+            .sort(([a], [b]) => a.localeCompare(b))
             .map(([nomeSala, reservasSala]) => {
               const infoSala = reservasSala[0];
+
               const reservasPorUsuario = reservasSala.reduce(
                 (agrupamento, reserva) => {
                   if (!agrupamento[reserva.nomeUsuario]) {
@@ -185,14 +192,14 @@ export default function ReservasAdmin() {
                   >
                     {infoSala.salaNome}
                   </Typography>
+
                   <Box
                     sx={{
                       bgcolor: "#f5f5f5",
                       p: 1,
                       borderRadius: 1,
                       mb: 1,
-                      marginLeft: 1,
-                      marginRight: 1,
+                      marginX: 1,
                     }}
                   >
                     <Typography
@@ -230,7 +237,9 @@ export default function ReservasAdmin() {
                                 fontWeight: "bold",
                               },
                             }}
-                            onClick={() => handleOpenDialog(reserva.id_reserva)}
+                            onClick={() =>
+                              handleOpenDialog(reserva.id_reserva, reservasSala)
+                            }
                           >
                             {reserva.horario_inicio.slice(0, 5)} -{" "}
                             {reserva.horario_fim.slice(0, 5)}
@@ -245,6 +254,7 @@ export default function ReservasAdmin() {
         </Box>
       </Container>
 
+      {/* ALERTA */}
       <Snackbar
         open={alert.visible}
         autoHideDuration={4000}
@@ -262,11 +272,13 @@ export default function ReservasAdmin() {
         )}
       </Snackbar>
 
+      {/* DIALOG DE CONFIRMAÇÃO COM HORÁRIOS */}
       <ConfirmDialog
         open={openDialog}
         onClose={handleCloseDialog}
         onConfirm={handleDeleteReserva}
-        title="Você tem certeza que deseja excluir esta reserva?"
+        title="Selecione os horários que deseja excluir."
+        periodos={horariosDaSala}
       />
     </Box>
   );

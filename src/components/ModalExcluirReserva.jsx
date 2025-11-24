@@ -1,11 +1,15 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
   Dialog,
   DialogTitle,
-  DialogContent,
+  DialogActions,
   Button,
-  Typography,
   Box,
+  Typography,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
 } from "@mui/material";
 
 export default function ModalExcluirReserva({
@@ -13,88 +17,136 @@ export default function ModalExcluirReserva({
   handleClose,
   reserva,
   onConfirm,
+  title,
 }) {
-  if (!reserva) return null;
+  const [selecionados, setSelecionados] = useState([]);
 
-  const formatarData = (dataISO) => {
-    if (!dataISO) return "Não informada";
-    const [ano, mes, dia] = dataISO.split("T")[0].split("-");
-    return `${dia}/${mes}/${ano}`;
-  };
+  useEffect(() => {
+    if (reserva?.periodoSelecionado) {
+      // Seleciona automaticamente o horário clicado
+      setSelecionados([Number(reserva.periodoSelecionado.id_reserva)]);
+    } else {
+      setSelecionados([]);
+    }
+  }, [reserva]);
 
-  const dataInicio = formatarData(reserva?.data_inicio || "");
-
-  // Pega apenas o horário clicado
-  const horarioInicio =
-    reserva?.periodoSelecionado?.horario_inicio?.slice(0, 5) || "";
-  const horarioFim =
-    reserva?.periodoSelecionado?.horario_fim?.slice(0, 5) || "";
+  const dataInicio = reserva?.data_inicio
+    ? reserva.data_inicio.split("T")[0].split("-").reverse().join("/")
+    : "Não informada";
 
   return (
-    <Dialog open={open} onClose={handleClose} maxWidth="xs" fullWidth>
+    <Dialog
+      open={open}
+      onClose={handleClose}
+      fullWidth
+      PaperProps={{
+        sx: {
+          backgroundColor: "#C91E1E",
+          borderRadius: 3,
+          padding: 1.5,
+          width: "500px", // largura fixa maior
+          maxWidth: "90%", // para responsividade em telas pequenas
+        },
+      }}
+    >
       <DialogTitle
         sx={{
-          bgcolor: "#b9181d",
-          color: "white",
+          color: "#fff",
           textAlign: "center",
           fontWeight: "bold",
+          fontSize: "20px",
+          paddingBottom: 2,
         }}
       >
-        EXCLUIR
+        {title || "Excluir Reserva"}
       </DialogTitle>
-
-      <DialogContent sx={{ mt: 2, textAlign: "left" }}>
-        <Typography variant="subtitle1" sx={{ mb: 1 }}>
-          SALA: {reserva?.nomeSala || reserva?.descricaoSala || "Desconhecida"}
-        </Typography>
-        <Typography variant="subtitle1" sx={{ mb: 1 }}>
-          DATA: {dataInicio}
-        </Typography>
-        <Typography variant="subtitle1" sx={{ mb: 1 }}>
-          HORÁRIO:{" "}
-          {horarioInicio && horarioFim
-            ? `${horarioInicio} - ${horarioFim}`
-            : "Não informado"}
-        </Typography>
-      </DialogContent>
 
       <Box
         sx={{
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          gap: 2,
-          mt: 2,
-          pb: 2,
+          backgroundColor: "#fff",
+          borderRadius: 2,
+          padding: 2,
+          marginX: 2,
+          marginBottom: 2,
         }}
       >
+        {!reserva ? (
+          <Typography textAlign="center">
+            Nenhuma reserva selecionada.
+          </Typography>
+        ) : (
+          <>
+            <Typography variant="subtitle1" sx={{ mb: 1 }}>
+              SALA: {reserva.nomeSala}
+            </Typography>
+            <Typography variant="subtitle1" sx={{ mb: 2 }}>
+              DATA: {dataInicio}
+            </Typography>
+
+            <FormControl fullWidth>
+              <InputLabel id="select-label" shrink>
+                Selecionar horários
+              </InputLabel>
+              <Select
+                labelId="select-label"
+                multiple
+                value={selecionados}
+                onChange={(e) => setSelecionados(e.target.value)}
+                renderValue={(selected) =>
+                  selected
+                    .map(
+                      (id) =>
+                        reserva.periodos
+                          .find((p) => p.id_reserva === id)
+                          ?.horario_inicio.slice(0, 5) +
+                        " - " +
+                        reserva.periodos
+                          .find((p) => p.id_reserva === id)
+                          ?.horario_fim.slice(0, 5)
+                    )
+                    .join(", ")
+                }
+              >
+                {reserva.periodos.map((p) => (
+                  <MenuItem key={p.id_reserva} value={p.id_reserva}>
+                    {p.horario_inicio.slice(0, 5)} - {p.horario_fim.slice(0, 5)}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </>
+        )}
+      </Box>
+
+      <DialogActions sx={{ justifyContent: "center", gap: 2 }}>
         <Button
-          onClick={onConfirm}
-          variant="contained"
           sx={{
-            bgcolor: "#f4c6c6",
-            color: "#b9181d",
+            color: "#C91E1E",
+            backgroundColor: "#fff",
+            borderRadius: 2,
+            textTransform: "none",
             fontWeight: "bold",
-            px: 5,
-            "&:hover": { bgcolor: "#e0a5a5" },
+            paddingX: 4,
           }}
+          onClick={handleClose}
         >
-          DELETAR RESERVA
+          Cancelar
         </Button>
 
         <Button
-          onClick={handleClose}
-          variant="contained"
+          onClick={() => onConfirm(selecionados)}
           sx={{
-            bgcolor: "#b9181d",
-            color: "white",
+            color: "#C91E1E",
+            backgroundColor: "#fff",
+            borderRadius: 2,
+            textTransform: "none",
             fontWeight: "bold",
-            px: 5,
+            paddingX: 4,
           }}
         >
-          FECHAR
+          Deletar
         </Button>
-      </Box>
+      </DialogActions>
     </Dialog>
   );
 }
