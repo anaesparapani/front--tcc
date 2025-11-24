@@ -21,6 +21,9 @@ export default function MinhasReservas() {
   const [reservaSelecionada, setReservaSelecionada] = useState(null);
   const idUsuario = localStorage.getItem("id_usuario");
 
+  const hoje = new Date();
+  hoje.setHours(0, 0, 0, 0); // garante comparação apenas de datas
+
   const handleClose = () => setAlert({ ...alert, visible: false });
 
   const carregarReservas = useCallback(() => {
@@ -41,8 +44,8 @@ export default function MinhasReservas() {
       .then((res) => {
         const reservasObj = res.data?.reservas || {};
 
-        const reservasFormatadas = Object.entries(reservasObj).flatMap(
-          ([data, reservasDoDia]) =>
+        const reservasFormatadas = Object.entries(reservasObj)
+          .flatMap(([data, reservasDoDia]) =>
             reservasDoDia.map((r, idx) => ({
               ...r,
               data_inicio: data,
@@ -58,7 +61,13 @@ export default function MinhasReservas() {
                 r.descricaoDetalhe || r.descricaoSala || idx
               }`,
             }))
-        );
+          )
+          // 🔥 FILTRA APENAS RESERVAS DE HOJE OU FUTURO (somente FRONT!)
+          .filter((r) => {
+            const dataReserva = new Date(r.data_inicio);
+            dataReserva.setHours(0, 0, 0, 0);
+            return dataReserva >= hoje;
+          });
 
         setReservas(reservasFormatadas);
       })
@@ -78,7 +87,6 @@ export default function MinhasReservas() {
 
   const handleExcluir = async (ids) => {
     try {
-      // ids deve ser um array de números (pelo modal)
       if (!Array.isArray(ids) || ids.length === 0) {
         setAlert({
           type: "warning",
@@ -88,7 +96,6 @@ export default function MinhasReservas() {
         return;
       }
 
-      // garante que são números (strip strings numéricas)
       const idsNumericos = ids.map((v) =>
         typeof v === "string" && /^\d+$/.test(v) ? Number(v) : v
       );
@@ -172,7 +179,7 @@ export default function MinhasReservas() {
           <Typography
             sx={{ textAlign: "center", fontWeight: "bold", fontSize: "1.2rem" }}
           >
-            Você não possui reservas no momento.
+            Você não possui reservas futuras.
           </Typography>
         </Box>
       )}
@@ -226,6 +233,7 @@ export default function MinhasReservas() {
                             }}
                             sx={{ bgcolor: "#b9181d", p: 1 }}
                           />
+
                           <CardContent sx={{ p: 1.5 }}>
                             <Box
                               sx={{
@@ -246,10 +254,6 @@ export default function MinhasReservas() {
                             {periodos.map((p) => {
                               const inicio = p.horario_inicio?.slice(0, 5);
                               const fim = p.horario_fim?.slice(0, 5);
-                              const texto =
-                                inicio && fim
-                                  ? `${inicio} - ${fim}`
-                                  : "Horário: não informado";
 
                               return (
                                 <Typography
@@ -272,11 +276,10 @@ export default function MinhasReservas() {
                                       periodos: reserva.periodos,
                                       periodoSelecionado: p,
                                     });
-
                                     setModalOpen(true);
                                   }}
                                 >
-                                  {texto}
+                                  {inicio} - {fim}
                                 </Typography>
                               );
                             })}
@@ -291,7 +294,6 @@ export default function MinhasReservas() {
         </Box>
       )}
 
-      {/*Modal para excluir*/}
       <ModalExcluirReserva
         open={modalOpen}
         handleClose={() => setModalOpen(false)}
@@ -305,11 +307,7 @@ export default function MinhasReservas() {
         anchorOrigin={{ vertical: "top", horizontal: "center" }}
       >
         {alert.type && (
-          <Alert
-            severity={alert.type}
-            onClose={handleClose}
-            sx={{ width: "100%" }}
-          >
+          <Alert severity={alert.type} onClose={handleClose} sx={{ width: "100%" }}>
             <AlertTitle>
               {alert.type === "success" && "Sucesso"}
               {alert.type === "error" && "Erro"}
