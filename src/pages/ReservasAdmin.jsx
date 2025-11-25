@@ -75,12 +75,14 @@ export default function ReservasAdmin() {
 
       const ids = idsSelecionados.map(Number);
 
-      await Promise.all(ids.map((id) => api.deleteSchedule(id_reserva)));
+      // CORREÇÃO AQUI: usar id, não id_reserva
+      await Promise.all(ids.map((id) => api.deleteSchedule(id)));
 
       setOpenDialog(false);
 
+      // CORREÇÃO AQUI
       setAlert({
-        message: response?.data?.message,
+        message: "Horário(s) deletado(s) com sucesso!",
         type: "success",
         visible: true,
       });
@@ -97,6 +99,7 @@ export default function ReservasAdmin() {
       });
     }
   };
+
 
   useEffect(() => {
     if (dataSelecionada) {
