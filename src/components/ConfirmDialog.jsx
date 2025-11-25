@@ -12,24 +12,34 @@ import {
   MenuItem,
 } from "@mui/material";
 
-function ConfirmDialog({ open, onClose, onConfirm, title, periodos = [] }) {
+function ConfirmDialog({
+  open,
+  onClose,
+  onConfirm,
+  title,
+  periodos = [],
+  periodoSelecionado, // <-- ADICIONADO
+}) {
   const [selecionados, setSelecionados] = useState([]);
 
+  // Pré-selecionar o horário clicado
   useEffect(() => {
-    if (open?.periodoSelecionado) {
-      const periodoEncontrado = periodos.find(
-        (p) => p.id === open.periodoSelecionado.id_reserva
-      );
-
-      if (periodoEncontrado) {
-        setSelecionados([periodoEncontrado.id]);
-      } else {
-        setSelecionados([]);
-      }
-    } else {
+    if (!open) {
       setSelecionados([]);
+      return;
     }
-  }, [open, periodos]);
+
+    if (periodoSelecionado) {
+      const encontrado = periodos.find((p) => p.id === periodoSelecionado);
+
+      if (encontrado) {
+        setSelecionados([encontrado.id]); // pré seleciona
+        return;
+      }
+    }
+
+    setSelecionados([]);
+  }, [open, periodos, periodoSelecionado]);
 
   return (
     <Dialog
@@ -55,7 +65,6 @@ function ConfirmDialog({ open, onClose, onConfirm, title, periodos = [] }) {
         {title}
       </DialogTitle>
 
-      {/* Seleção de horários */}
       <Box
         sx={{
           backgroundColor: "#fff",
@@ -78,12 +87,10 @@ function ConfirmDialog({ open, onClose, onConfirm, title, periodos = [] }) {
               onChange={(e) => setSelecionados(e.target.value)}
               renderValue={(selected) =>
                 selected
-                  .map(
-                    (id) =>
-                      periodos.find((p) => p.id === id)?.inicio +
-                      " - " +
-                      periodos.find((p) => p.id === id)?.fim
-                  )
+                  .map((id) => {
+                    const p = periodos.find((p) => p.id === id);
+                    return `${p.inicio} - ${p.fim}`;
+                  })
                   .join(", ")
               }
             >

@@ -304,6 +304,7 @@ export default function ReservasAdmin() {
         onConfirm={handleDeleteReserva}
         title="Selecione os horários que deseja deletar."
         periodos={horariosDaSala}
+        periodoSelecionado={reservaId}  // <-- ESSENCIAL
       />
     </Box>
   );
