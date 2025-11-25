@@ -75,7 +75,7 @@ export default function ReservasAdmin() {
 
       const ids = idsSelecionados.map(Number);
 
-      await Promise.all(ids.map((id) => api.deleteSchedule(id)));
+      await Promise.all(ids.map((id) => api.deleteSchedule(id_reserva)));
 
       setOpenDialog(false);
 
