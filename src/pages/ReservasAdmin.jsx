@@ -62,9 +62,21 @@ export default function ReservasAdmin() {
     }
   }
 
-  const handleDeleteReserva = async () => {
+  const handleDeleteReserva = async (idsSelecionados) => {
     try {
-      const response = await api.deleteSchedule(reservaId);
+      if (!Array.isArray(idsSelecionados) || idsSelecionados.length === 0) {
+        setAlert({
+          message: "Nenhum horário selecionado.",
+          type: "warning",
+          visible: true,
+        });
+        return;
+      }
+
+      const ids = idsSelecionados.map(Number);
+
+      await Promise.all(ids.map((id) => api.deleteSchedule(id)));
+
       setOpenDialog(false);
 
       setAlert({
@@ -243,8 +255,13 @@ export default function ReservasAdmin() {
                               },
                             }}
                             onClick={() =>
-                              handleOpenDialog(reserva.id_reserva, reservasSala)
+                              handleOpenDialog(
+                                reserva.id_reserva,
+                                reservasSala.filter((r) => r.nomeUsuario === reserva.nomeUsuario)
+                              )
                             }
+
+
                           >
                             {reserva.horario_inicio.slice(0, 5)} -{" "}
                             {reserva.horario_fim.slice(0, 5)}
